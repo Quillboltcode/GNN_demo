@@ -67,7 +67,7 @@ class GATNN(nn.Module):
                 total_loss += loss
 
 
-num_classed = 128
+
 
 
 class Net(torch.nn.Module):
