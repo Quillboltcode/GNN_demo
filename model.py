@@ -71,7 +71,7 @@ class GATNN(nn.Module):
 
 
 class Net(torch.nn.Module):
-    def __init__(self,embed_dim):
+    def __init__(self,embed_dim = 128, different_ids = 37353):
         super(Net, self).__init__()
 
         self.conv1 = SAGEConv(embed_dim, 128)
@@ -80,9 +80,8 @@ class Net(torch.nn.Module):
         self.pool2 = TopKPooling(128, ratio=0.8)
         self.conv3 = SAGEConv(128, 128)
         self.pool3 = TopKPooling(128, ratio=0.8)
-        self.item_embedding = torch.nn.Embedding(
-            num_embeddings=num_classed + 1, embedding_dim=embed_dim
-        )
+        self.item_embedding = torch.nn.Embedding(num_embeddings=different_ids, embedding_dim=embed_dim)
+        #self.item_embedding = torch.nn.Embedding(num_embeddings=clicks_df.item_id.max() + 1, embedding_dim=embed_dim)
         self.lin1 = torch.nn.Linear(256, 128)
         self.lin2 = torch.nn.Linear(128, 64)
         self.lin3 = torch.nn.Linear(64, 1)
@@ -98,17 +97,18 @@ class Net(torch.nn.Module):
 
         x = F.relu(self.conv1(x, edge_index))
 
-        x, edge_index, _, batch, _ = self.pool1(x, edge_index, None, batch)
+        x, edge_index, _, batch, _, _ = self.pool1(x, edge_index, None, batch)
+
         x1 = torch.cat([gmp(x, batch), gap(x, batch)], dim=1)
 
         x = F.relu(self.conv2(x, edge_index))
 
-        x, edge_index, _, batch, _ = self.pool2(x, edge_index, None, batch)
+        x, edge_index, _, batch, _, _ = self.pool2(x, edge_index, None, batch)
         x2 = torch.cat([gmp(x, batch), gap(x, batch)], dim=1)
 
         x = F.relu(self.conv3(x, edge_index))
 
-        x, edge_index, _, batch, _ = self.pool3(x, edge_index, None, batch)
+        x, edge_index, _, batch, _, _ = self.pool3(x, edge_index, None, batch)
         x3 = torch.cat([gmp(x, batch), gap(x, batch)], dim=1)
 
         x = x1 + x2 + x3
