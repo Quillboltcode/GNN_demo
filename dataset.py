@@ -10,7 +10,7 @@ import pandas as pd
 import numpy as np
 from sklearn.calibration import LabelEncoder
 import torch
-from torch_geometric.data import InMemoryDataset, Dataset
+from torch_geometric.data import InMemoryDataset, Dataset ,Data
 from tqdm import tqdm
 
 class MultiSessionsGraph(InMemoryDataset):

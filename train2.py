@@ -1,13 +1,16 @@
 import os
 import torch
-from dataset import LoadData
+from dataset import LoadData, YooChooseBinaryDataset
 from torch_geometric.data import DataLoader
 import argparse
 from model import Net
 from tqdm import tqdm
 import torch.optim as optim
+from sklearn.metrics import roc_auc_score
+
+import numpy as np
 from torch.optim.lr_scheduler import StepLR
-from test import test
+# from test import test
 import torch.nn.functional as F
 from torch.utils.tensorboard import SummaryWriter
 
@@ -17,6 +20,35 @@ last = wdir + 'last.pt'
 best = wdir + 'best.pt'
 results_file = 'results.txt'
 
+def test(test_loader, model, device):
+    model.eval()
+
+    predictions = []
+    labels = []
+    print(len(test_loader))
+    nb = len(test_loader)
+
+    # Disable gradients
+    pbar = tqdm(enumerate(test_loader), total=nb)
+    for batch_idx, data in pbar:
+        with torch.no_grad():
+            data = data.to(device)
+            pred = model(data).detach().cpu().numpy()
+
+            label = data.y.detach().cpu().numpy()
+
+            predictions.append(pred)
+            labels.append(label)
+
+    predictions = np.hstack(predictions)
+    labels = np.hstack(labels)
+
+    #predictions = binarize(predictions, threshold=0.5, copy=True)
+    #labels = binarize(labels, threshold=0.5, copy=True)
+
+
+
+    return roc_auc_score(labels, predictions)
 
 def train(args, model, device, train_loader, test_loader, val_loader, optimizer, save=True):
 
@@ -175,7 +207,7 @@ def main():
     model = Net().to(device)
     optimizer = optim.Adam(model.parameters(), lr=args.lr)
 
-    dataset = LoadData('./data/processed.dataset')
+    dataset = YooChooseBinaryDataset('./')
 
     one_tenth_length = int(len(dataset) * 0.1)
     train_dataset = dataset[:one_tenth_length * 8]
